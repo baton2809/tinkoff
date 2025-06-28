@@ -1,2 +1,7 @@
+__pycache__
 .venv
 instruction.txt
+data
+reward_model_output
+processed_dataset
+wandb

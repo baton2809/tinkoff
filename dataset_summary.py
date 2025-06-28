@@ -1,15 +1,10 @@
-"""
-Сводка по обработанному датасету HelpSteer2_binarized
-Сохранение и анализ результатов
-"""
-
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 import json
 import os
 
-def save_processed_datasets(train_dataset, val_dataset, output_dir="processed_helpsteer"):
+def save_processed_datasets(train_dataset, val_dataset, output_dir="processed_dataset"):
     """
     Сохраняет обработанные датасеты
     """
@@ -31,7 +26,7 @@ def save_processed_datasets(train_dataset, val_dataset, output_dir="processed_he
         "split_used": "average_rating",
         "train_size": len(train_dataset),
         "validation_size": len(val_dataset),
-        "max_length": 256,
+        "max_length": 128,
         "tokenizer": "microsoft/DialoGPT-medium",
         "columns": train_dataset.column_names,
         "split_ratio": "80/20"
@@ -55,7 +50,7 @@ def analyze_dataset_statistics(train_dataset, val_dataset):
     print(f"Validation: {len(val_dataset)} ({len(val_dataset)/(len(train_dataset) + len(val_dataset))*100:.1f}%)")
     
     # Анализ длин токенов
-    print(f"\nАнализ длин токенов (максимум 256):")
+    print(f"\nАнализ длин токенов (максимум 128):")
     
     # Считаем реальные длины (без padding)
     train_lengths = []
@@ -75,15 +70,11 @@ def analyze_dataset_statistics(train_dataset, val_dataset):
         
         # Распределение длин
         short_count = sum(1 for l in train_lengths if l < 64)
-        medium_count = sum(1 for l in train_lengths if 64 <= l < 128)
-        long_count = sum(1 for l in train_lengths if 128 <= l < 256)
-        max_count = sum(1 for l in train_lengths if l == 256)
+        long_count = sum(1 for l in train_lengths if l >= 64)
         
         print(f"\nРаспределение длин:")
         print(f"Короткие (< 64 токенов): {short_count} ({short_count/len(train_lengths)*100:.1f}%)")
-        print(f"Средние (64-127 токенов): {medium_count} ({medium_count/len(train_lengths)*100:.1f}%)")
-        print(f"Длинные (128-255 токенов): {long_count} ({long_count/len(train_lengths)*100:.1f}%)")
-        print(f"Максимальные (256 токенов): {max_count} ({max_count/len(train_lengths)*100:.1f}%)")
+        print(f"Средние (>= 64 токенов): {long_count} ({long_count/len(train_lengths)*100:.1f}%)")
 
 def show_examples(train_dataset, num_examples=3):
     """
@@ -99,7 +90,7 @@ def show_examples(train_dataset, num_examples=3):
         print(f"Rejected rating: {example['rejected_rating']}")
         print(f"Длина токенов: {len([t for t in example['input_ids'] if t != 50256])}")
 
-def load_processed_datasets(input_dir="processed_helpsteer"):
+def load_processed_datasets(input_dir="processed_dataset"):
     """
     Загружает ранее сохраненные обработанные датасеты
     """
@@ -146,12 +137,5 @@ def main():
     # Анализируем статистику
     analyze_dataset_statistics(train_data, val_data)
     
-    # Показываем примеры
-    show_examples(train_data)
-    
-    print(f"\n=== Готово к использованию ===")
-    print(f"Датасеты готовы для обучения модели с максимальной длиной 256 токенов")
-    print(f"Используйте train_data и val_data для SFT, DPO или других методов обучения")
-
 if __name__ == "__main__":
     main()

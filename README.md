@@ -1,10 +1,10 @@
-# Настройка ML окружения для M1 MacBook
+# Тестовое задание в команду Alignment
 
-## Установка и настройка
+## Начало
 
-### 1. Создание виртуального окружения
+### 1. Создание окружения
 ```bash
-python3.13 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -14,9 +14,9 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 3. Проверка установки
+### 3. Проверить библиотеки
 ```bash
-python setup_libraries.py
+python setup_check.py
 ```
 
 ## Особенности для M1 MacBook
@@ -41,76 +41,25 @@ python setup_libraries.py
 - **trl**: Transformer Reinforcement Learning (PPO, SFT)
 - **accelerate**: Распределенное обучение и оптимизация
 
-## Функции в setup_libraries.py
+## Статистика датасета
 
-### `setup_model_and_tokenizer(model_name)`
-Загружает модель и токенизатор с оптимизацией для M1:
-```python
-model, tokenizer = setup_model_and_tokenizer("microsoft/DialoGPT-medium")
-```
+- **Общее количество примеров**: 8,678
+- **Train dataset**: 6,942 примера (80%)
+- **Validation dataset**: 1,736 примеров (20%)
+- **Максимальная длина токенов**: 256
+- **Средняя длина токенов**: 110.2
+- **Средняя разница в рейтингах**: 0.76
 
-### `setup_lora_config()`
-Создает конфигурацию LoRA для эффективного fine-tuning:
-```python
-lora_config = setup_lora_config()
-model = get_peft_model(model, lora_config)
-```
+### Распределение длин токенов:
+- Короткие (< 64 токенов): 53.2%
+- Средние (64-127 токенов): 9.1%
+- Длинные (> 127 токенов): 37.7%
 
-### `setup_training_arguments()`
-Настраивает аргументы обучения для M1:
-```python
-training_args = setup_training_arguments()
-```
+## Выводы:
 
-### `setup_accelerator()`
-Настраивает Accelerator для оптимизации:
-```python
-accelerator = setup_accelerator()
-```
-
-## Пример использования
-
-```python
-from setup_libraries import *
-
-# Проверка библиотек
-check_libraries()
-
-# Загрузка модели
-model, tokenizer = setup_model_and_tokenizer("microsoft/DialoGPT-small")
-
-# Настройка LoRA
-lora_config = setup_lora_config()
-model = get_peft_model(model, lora_config)
-
-# Настройка обучения
-training_args = setup_training_arguments()
-accelerator = setup_accelerator()
-
-print(f"Модель загружена на устройство: {device}")
-print(f"Используется тип данных: {torch_dtype}")
-```
-
-## Рекомендации для M1 MacBook
-
-1. **Память**: Используйте маленькие модели (до 7B параметров) для комфортной работы
-2. **Batch Size**: Начинайте с batch_size=1 и увеличивайте gradient_accumulation_steps
-3. **Модели**: Рекомендуемые модели для начала:
-   - `microsoft/DialoGPT-small`
-   - `distilgpt2`
-   - `gpt2`
-4. **Мониторинг**: Следите за использованием памяти через Activity Monitor
-5. **Охлаждение**: При длительном обучении следите за температурой устройства
-
-## Устранение проблем
-
-### Ошибки памяти
-- Уменьшите batch_size до 1
-- Увеличьте gradient_accumulation_steps
-- Используйте более маленькую модель
-- Очистите кэш: `torch.backends.mps.empty_cache()`
-
-### Проблемы с MPS
-- Убедитесь, что используете macOS 12.3+
-- Проверьте совместимость операций с MPS
-- При необходимости переключитесь на CPU: `device = torch.device("cpu")`
+- ✅ Загрузил датасет `esfrankel17/original_HelpSteer2_binarized` с Hugging Face Hub
+- ✅ Разделил данные на train (80%) и validation (20%) подвыборки
+- ✅ Ограничил максимальную длину текста до 256 токенов для предотвращения OOM
+- ✅ Токенизировал данные с помощью `microsoft/DialoGPT-medium`
+- ✅ Сохранил обработанные датасеты для дальнейшего использования
+- ✅ Оптимизировал для работы на M1 MacBook с MPS
