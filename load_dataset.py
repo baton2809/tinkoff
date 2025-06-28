@@ -12,36 +12,21 @@ def load_and_explore_dataset():
     """
     Загружает датасет и исследует его структуру
     """
-    # Список возможных названий датасетов для попытки загрузки
-    dataset_candidates = [
-        "esfrankel17/HelpSteer2_binarized",
-        "esfrankel17/original_HelpSteer2_binarized", 
-        "juyoungml/HelpSteer2-binarized",
-        "dogtooth/helpsteer2_binarized",
-        "sablo/HelpSteer_binarized",
-        "KatoHF/helpsteer_binarized",
-        "jan-hq/nvidia_helpsteer_binarized"
-    ]
+
+    candidate = "juyoungml/HelpSteer2-binarized"
     
     dataset = None
     dataset_name = None
     
-    for candidate in dataset_candidates:
-        print(f"Пробуем загрузить датасет: {candidate}")
-        try:
-            dataset = load_dataset(candidate)
-            dataset_name = candidate
-            print(f"✓ Датасет {candidate} успешно загружен!")
-            break
-        except Exception as e:
-            print(f"✗ Ошибка при загрузке {candidate}: {str(e)[:100]}...")
-            continue
+    print(f"Пробуем загрузить датасет: {candidate}")
+    try:
+        dataset = load_dataset(candidate)
+        dataset_name = candidate
+        print(f"✓ Датасет {candidate} успешно загружен!")
+    except Exception as e:
+        print(f"✗ Не удалось загрузить датасет")
+        return
     
-    if dataset is None:
-        print("Не удалось загрузить ни один из кандидатов датасетов")
-        return None
-        
-    print(f"\nИспользуем датасет: {dataset_name}")
     print(f"Доступные splits: {list(dataset.keys())}")
     
     # Ищем подходящий split
@@ -106,7 +91,7 @@ def setup_tokenizer(model_name="microsoft/DialoGPT-medium"):
     print(f"Токенизатор готов. Vocab size: {tokenizer.vocab_size}")
     return tokenizer
 
-def tokenize_function(examples, tokenizer, max_length=256, text_column="prompt"):
+def tokenize_function(examples, tokenizer, max_length=128, text_column="prompt"):
     """
     Функция токенизации с ограничением длины
     """
@@ -131,7 +116,7 @@ def tokenize_function(examples, tokenizer, max_length=256, text_column="prompt")
     
     return tokenized
 
-def process_dataset(train_dataset, val_dataset, tokenizer, max_length=256):
+def process_dataset(train_dataset, val_dataset, tokenizer, max_length=128):
     """
     Обрабатывает датасеты с токенизацией
     """
@@ -194,7 +179,7 @@ def main():
         train_dataset, 
         val_dataset, 
         tokenizer, 
-        max_length=256
+        max_length=128
     )
     
     # 5. Сохраняем обработанные датасеты
@@ -205,7 +190,7 @@ def main():
     print("\n=== Финальная статистика ===")
     print(f"Train dataset: {len(tokenized_train)} примеров")
     print(f"Validation dataset: {len(tokenized_val)} примеров")
-    print(f"Максимальная длина токенов: 256")
+    print(f"Максимальная длина токенов: 128")
     print(f"Колонки в обработанном датасете: {tokenized_train.column_names}")
     
     # Показываем пример токенизированных данных
