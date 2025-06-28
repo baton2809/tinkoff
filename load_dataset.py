@@ -183,7 +183,7 @@ def main():
     )
     
     # 5. Сохраняем обработанные датасеты
-    from dataset_summary import save_processed_datasets
+    from summary_dataset import save_processed_datasets
     output_dir = save_processed_datasets(tokenized_train, tokenized_val)
     
     # 6. Показываем статистику
@@ -200,7 +200,7 @@ def main():
     print(f"Attention mask shape: {len(example['attention_mask'])}")
     
     print(f"\n✓ Датасеты сохранены в директории: {output_dir}")
-    print(f"✓ Для анализа запустите: python dataset_summary.py")
+    print(f"✓ Для анализа запустите: python summary_dataset.py")
     
     return tokenized_train, tokenized_val
 

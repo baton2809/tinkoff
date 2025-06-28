@@ -41,9 +41,9 @@ def check_requirements():
     # Проверяем наличие файлов
     required_files = [
         "requirements.txt",
-        "load_helpsteer_dataset.py", 
+        "load_dataset.py", 
         "train_reward_model.py",
-        "reward_model_demo.py"
+        "test_reward_model.py"
     ]
     
     missing_files = []
@@ -81,12 +81,12 @@ def prepare_dataset():
     Подготавливает датасет для обучения
     """
     # Проверяем, есть ли уже обработанный датасет
-    if os.path.exists("processed_helpsteer") and os.path.exists("processed_helpsteer/metadata.json"):
+    if os.path.exists("processed_dataset") and os.path.exists("processed_dataset/metadata.json"):
         print("✅ Обработанный датасет уже существует, пропускаем подготовку")
         return True
     
     return run_command(
-        "python load_helpsteer_dataset.py",
+        "python load_dataset.py",
         "Подготовка датасета HelpSteer2_binarized"
     )
 
@@ -112,7 +112,7 @@ def test_reward_model():
     Тестирует обученную reward model
     """
     return run_command(
-        "python reward_model_demo.py",
+        "python test_reward_model.py",
         "Тестирование обученной Reward Model"
     )
 
@@ -130,11 +130,11 @@ def show_summary():
         print(f"📁 Модель сохранена в: reward_model_output/")
         print(f"📊 Файлов в модели: {len(model_files)}")
     
-    if os.path.exists("processed_helpsteer"):
-        print(f"📁 Датасет обработан в: processed_helpsteer/")
+    if os.path.exists("processed_dataset"):
+        print(f"📁 Датасет обработан в: processed_dataset/")
     
     print(f"\n📖 Документация: README_reward_model.md")
-    print(f"🧪 Для тестирования: python reward_model_demo.py")
+    print(f"🧪 Для тестирования: python test_reward_model.py")
     print(f"🔧 Для настройки: отредактируйте train_reward_model.py")
     
     print(f"\n💡 Следующие шаги:")

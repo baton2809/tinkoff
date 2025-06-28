@@ -1,4 +1,3 @@
-import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer
 import json
@@ -131,7 +130,7 @@ def main():
     train_data, val_data = load_processed_datasets()
     
     if train_data is None:
-        print("Обработанные данные не найдены. Запустите load_helpsteer_dataset.py сначала.")
+        print("Обработанные данные не найдены. Запустите load_dataset.py сначала.")
         return
     
     # Анализируем статистику

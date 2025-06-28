@@ -4,8 +4,8 @@ library_name: transformers
 model_name: reward_model_output
 tags:
 - generated_from_trainer
-- reward-trainer
 - trl
+- reward-trainer
 licence: license
 ---
 

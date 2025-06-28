@@ -69,7 +69,7 @@ def load_reward_model_and_tokenizer(model_name: str = "HuggingFaceTB/SmolLM2-135
     
     return model, tokenizer
 
-def load_processed_dataset(data_dir: str = "processed_helpsteer", max_samples: int = None):
+def load_processed_dataset(data_dir: str = "processed_dataset", max_samples: int = None):
     """
     Загружает обработанный датасет с парами chosen/rejected
     Добавлена возможность ограничить количество примеров для экономии памяти
@@ -77,7 +77,7 @@ def load_processed_dataset(data_dir: str = "processed_helpsteer", max_samples: i
     print(f"Загружаем обработанный датасет из: {data_dir}")
     
     if not os.path.exists(data_dir):
-        raise FileNotFoundError(f"Директория {data_dir} не найдена. Сначала запустите load_helpsteer_dataset.py")
+        raise FileNotFoundError(f"Директория {data_dir} не найдена. Сначала запустите load_dataset.py")
     
     # Загружаем train и validation датасеты
     train_dataset = load_from_disk(os.path.join(data_dir, "train"))
