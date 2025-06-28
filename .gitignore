@@ -4,4 +4,4 @@ instruction.txt
 data
 reward_model_output
 processed_dataset
-wantdb
+wandb
