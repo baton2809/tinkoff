@@ -72,7 +72,8 @@ python setup_check.py
 
 ## Выводы
 
-- ✅ Загрузил датасет `esfrankel17/original_HelpSteer2_binarized` с Hugging Face Hub
+- ✅ Загрузил датасет `
+juyoungml/original_HelpSteer2_binarized` с Hugging Face Hub
 - ✅ Разделил данные на train (80%) и validation (20%) подвыборки
 - ✅ Ограничил максимальную длину текста до 256 токенов для предотвращения OOM
 - ✅ Токенизировал данные с помощью `microsoft/DialoGPT-medium`

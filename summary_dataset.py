@@ -21,7 +21,7 @@ def save_processed_datasets(train_dataset, val_dataset, output_dir="processed_da
     
     # Сохраняем метаданные
     metadata = {
-        "dataset_name": "esfrankel17/original_HelpSteer2_binarized",
+        "dataset_name": "juyoungml/original_HelpSteer2_binarized",
         "split_used": "average_rating",
         "train_size": len(train_dataset),
         "validation_size": len(val_dataset),
