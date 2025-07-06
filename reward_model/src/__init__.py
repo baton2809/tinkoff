@@ -8,6 +8,6 @@ from .trainer import RewardModelTrainer
 
 __all__ = [
     "RewardDataLoader",
-    "RewardModelManager", 
+    "RewardModelManager",
     "RewardModelTrainer"
 ]

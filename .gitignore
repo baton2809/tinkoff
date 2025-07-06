@@ -6,3 +6,4 @@ reward_model_output
 processed_dataset
 reward_model/processed_dataset/
 reward_model/models/
+reward_model/wantdb/

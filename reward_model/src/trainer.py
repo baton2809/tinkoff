@@ -1,21 +1,16 @@
-"""
-Training utilities for reward model.
-"""
-
 import os
-from typing import Tuple, Optional
-from trl import RewardTrainer, RewardConfig
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from datasets import Dataset
+from typing import Optional
 
-from .model_manager import RewardModelManager
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from trl import RewardTrainer, RewardConfig
+
+from utils.device_utils import get_model_loading_config, clear_memory_before
 from .data_loader import RewardDataLoader
+from .model_manager import RewardModelManager
 from ..config.training_config import TrainingConfig
 
 
 class RewardModelTrainer:
-    """Handles reward model training process."""
-    
     def __init__(self, config: TrainingConfig):
         """
         Initialize trainer with configuration.
@@ -26,7 +21,10 @@ class RewardModelTrainer:
         self.config = config
         self.model_manager = RewardModelManager()
         self.data_loader = RewardDataLoader(config.data_dir)
-        
+        self.model = None
+        self.tokenizer = None
+
+    @clear_memory_before
     def setup_training_args(self) -> RewardConfig:
         """
         Setup training arguments from configuration.
@@ -59,93 +57,66 @@ class RewardModelTrainer:
             save_total_limit=self.config.save_total_limit,
             load_best_model_at_end=self.config.load_best_model_at_end,
         )
-    
-    def train(self) -> Tuple[RewardTrainer, AutoModelForSequenceClassification, AutoTokenizer]:
-        """
-        Execute the complete training process.
-        
-        Returns:
-            Tuple of (trainer, model, tokenizer)
-            
-        Raises:
-            RuntimeError: If MPS memory error occurs
-            FileNotFoundError: If data directory not found
-        """
-        print("Starting reward model training")
-        
+
+    def train(self):
+        model_path = self.config.output_dir
+
+        if os.path.exists(os.path.join(model_path, "config.json")):
+            print(f"Обнаружена обученная модель в {model_path}, загружаем...")
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            print(f"Модель успешно загружена из {model_path}")
+            return
+
         try:
-            # Clear memory at start
-            self.model_manager.clear_memory()
-            
-            # Load model and tokenizer
-            print(f"Loading base model: {self.config.base_model_name}")
-            model, tokenizer = self.model_manager.load_model_and_tokenizer(
-                self.config.base_model_name
+            print(f"Загружаем SFT: {self.config.base_model_name}")
+            model_config = get_model_loading_config()
+
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                self.config.base_model_name,
+                num_labels=1,
+                **model_config
             )
-            
-            print(f"Model parameters: {model.num_parameters():,}")
-            
-            # Load and prepare datasets
-            print("Loading datasets")
+            self.tokenizer = AutoTokenizer.from_pretrained(self.config.base_model_name)
+
+            print(f"Количество параметров модели: {self.model.num_parameters():,}")
+
+            print(f"Загружаем датасет из {self.config.data_dir}...")
             train_dataset, val_dataset = self.data_loader.load_datasets(
+                split_ratio=self.config.split_ratio,
                 max_samples=self.config.max_samples
             )
-            
-            print(f"Train samples: {len(train_dataset)}")
-            print(f"Validation samples: {len(val_dataset)}")
-            
-            # Prepare datasets for training
-            print("Preparing datasets for training")
-            train_prepared = self.data_loader.prepare_for_training(
-                train_dataset, self.config.max_length
-            )
-            val_prepared = self.data_loader.prepare_for_training(
-                val_dataset, self.config.max_length
-            )
-            
-            # Clear memory after data preparation
-            self.model_manager.clear_memory()
-            
-            # Setup training arguments
+
             training_args = self.setup_training_args()
-            
-            # Create trainer
-            print("Creating RewardTrainer")
+
+            print("Создаем RewardTrainer...")
             trainer = RewardTrainer(
-                model=model,
-                processing_class=tokenizer,
+                model=self.model,
+                processing_class=self.tokenizer,
                 args=training_args,
-                train_dataset=train_prepared,
-                eval_dataset=val_prepared,
+                train_dataset=train_dataset,
+                eval_dataset=val_dataset,
             )
-            
-            # Clear memory before training
-            self.model_manager.clear_memory()
-            
-            # Start training
-            print("Starting training process")
+
+            print("Начинаем процесс обучения...")
             trainer.train()
-            
-            # Save model
-            print("Saving trained model")
-            self.model_manager.save_model(model, tokenizer, self.config.output_dir)
-            
-            print(f"Training completed. Model saved to: {self.config.output_dir}")
-            
-            return trainer, model, tokenizer
-            
+
+            print("Сохраняем обученную модель...")
+            self.model_manager.save_model(self.model, self.tokenizer, self.config.output_dir)
+
+            print(f"Обучение завершено. Модель сохранена в: {self.config.output_dir}")
+
         except RuntimeError as e:
-            if "MPS backend out of memory" in str(e):
-                print("MPS memory error occurred!")
-                print("Suggestions:")
-                print(f"1. Reduce max_samples (current: {self.config.max_samples})")
-                print(f"2. Reduce max_length (current: {self.config.max_length})")
-                print(f"3. Reduce batch_size (current: {self.config.per_device_train_batch_size})")
-                print("4. Use CPU instead of MPS")
-                print("5. Close other applications to free memory")
+            if "MPS Out of Memory" in str(e):
+                print("\nРекомендации:")
+                print(f"1. Уменьшить max_samples (сейчас: {self.config.max_samples})")
+                print(f"2. Уменьшить max_length (сейчас: {self.config.max_length})")
+                print(f"3. Уменьшить batch_size (сейчас: {self.config.per_device_train_batch_size})")
+                print("4. Закрыть другие приложения для освобождения памяти")
+                print("5. Перезапустить Python для очистки памяти")
             raise
-    
-    def evaluate_model(self, model_path: Optional[str] = None) -> dict:
+
+    def evaluate_model(self, model_path: Optional[str] = None) -> None:
         """
         Evaluate trained model with test examples.
         
@@ -157,11 +128,10 @@ class RewardModelTrainer:
         """
         if model_path is None:
             model_path = self.config.output_dir
-        
-        print(f"Loading model for evaluation: {model_path}")
-        model, tokenizer = self.model_manager.load_trained_model(model_path)
-        
-        # Test examples
+
+        print(f"Загружаем модель для оценки: {model_path}")
+        self.model_manager.load_trained_model(model_path)
+
         test_cases = [
             {
                 "prompt": "How to cook pasta?",
@@ -174,21 +144,21 @@ class RewardModelTrainer:
                 "bad_response": "It's complicated stuff with computers."
             }
         ]
-        
+
         results = []
         for case in test_cases:
             comparison = self.model_manager.compare_responses(
-                case["prompt"], 
-                case["good_response"], 
+                case["prompt"],
+                case["good_response"],
                 case["bad_response"],
                 self.config.max_length
             )
             results.append(comparison)
-            
-            print(f"\nTest case: {case['prompt']}")
-            print(f"Good response score: {comparison['score_a']:.4f}")
-            print(f"Bad response score: {comparison['score_b']:.4f}")
-            print(f"Difference: {comparison['difference']:.4f}")
-            print(f"Correct preference: {'Yes' if comparison['preferred'] == 'A' else 'No'}")
-        
-        return results
+
+            print(f"\nТестовый пример: {case['prompt']}")
+            print(f"Принятый ответ из dataset: {case['good_response']}")
+            print(f"Отвергнутый ответ из dataset: {case['bad_response']}")
+            print(f"Оценка хорошего ответа: {comparison['score_a']:.4f}")
+            print(f"Оценка плохого ответа: {comparison['score_b']:.4f}")
+            print(f"Разница: {comparison['difference']:.4f}")
+            print(f"Правильное предпочтение: {'Да' if comparison['preferred'] == 'A' else 'Нет'}")
