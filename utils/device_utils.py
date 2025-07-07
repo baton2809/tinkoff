@@ -2,7 +2,6 @@ import torch
 import gc
 
 
-
 def clear_memory():
     if torch.mps.is_available():
         torch.mps.empty_cache()
@@ -61,7 +60,6 @@ def get_optimal_dtype_and_device_map():
         return torch_dtype, device_map
 
 
-@clear_memory_before
 def get_model_loading_config(verbose=True):
     torch_dtype, device_map = get_optimal_dtype_and_device_map()
     

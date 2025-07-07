@@ -46,3 +46,8 @@ class TrainingConfig:
     model_path: str = "reward_model_output"
     data_dir: str = "processed_dataset"
     output_dir: str = "trained_model"
+    
+    # REINFORCE parameters
+    kl_coef: float = 0.1
+    baseline_momentum: float = 0.9
+    temperature: float = 1.0
