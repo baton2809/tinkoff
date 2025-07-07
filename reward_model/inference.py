@@ -1,7 +1,4 @@
-"""
-Inference script for trained reward model.
-"""
-
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -75,7 +72,6 @@ class RewardModelInference:
         print("  score <text> - Get reward score for text")
         print("  compare <prompt> | <response_a> | <response_b> - Compare responses")
         print("  quit - Exit")
-        print()
 
         while True:
             try:
@@ -112,8 +108,7 @@ class RewardModelInference:
                 print(f"Error: {e}")
 
 
-def main():
-    import argparse
+if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Reward model inference")
     parser.add_argument("--model_path", default="models/trained_model",
@@ -157,7 +152,3 @@ def main():
         print(f"Bad response score: {result['score_b']:.4f}")
         print(f"Difference: {result['difference']:.4f}")
         print(f"Model prefers: {result['preferred']}\n")
-
-
-if __name__ == "__main__":
-    main()

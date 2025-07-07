@@ -9,7 +9,7 @@ python3.13 -m venv .venv;source .venv/bin/activate;pip install --upgrade pip;pip
 ### Загружаем и токенизируем датасет
 
 ```shell
-python -m preprocess.load_dataset --max_length 128 --batch_size 8
+python -m preprocess.load_dataset --max_length 200 --batch_size 5
 ```
 
 Аргумент `max_length` опциональный, задает максимальную длину токенов в датасете
@@ -47,4 +47,3 @@ chmod +x cleanup.sh
 ```shell
 deactivate
 ```
-
