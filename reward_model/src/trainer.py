@@ -116,49 +116,71 @@ class RewardModelTrainer:
                 print("5. Перезапустить Python для очистки памяти")
             raise
 
-    def evaluate_model(self, model_path: Optional[str] = None) -> None:
-        """
-        Evaluate trained model with test examples.
-        
-        Args:
-            model_path: Path to trained model (uses config.output_dir if None)
-            
-        Returns:
-            Dictionary with evaluation results
-        """
+    def evaluate_model(self, model_path: Optional[str] = None, num_samples: int = 10) -> dict:
         if model_path is None:
             model_path = self.config.output_dir
 
         print(f"Загружаем модель для оценки: {model_path}")
         self.model_manager.load_trained_model(model_path)
 
-        test_cases = [
-            {
-                "prompt": "How to cook pasta?",
-                "good_response": "Boil water, add salt, cook pasta according to package instructions.",
-                "bad_response": "I don't know, try searching online."
-            },
-            {
-                "prompt": "Explain machine learning",
-                "good_response": "Machine learning is a subset of AI that enables computers to learn from data.",
-                "bad_response": "It's complicated stuff with computers."
-            }
-        ]
+        print(f"Загружаем валидационный датасет из {self.config.data_dir}...")
+        try:
+            _, val_dataset = self.data_loader.load_datasets()
+        except Exception as e:
+            print(f"Ошибка при загрузке датасета: {e}")
+            print("Убедитесь, что processed_dataset создан с помощью preprocess/load_dataset.py")
+            return {}
+
+        eval_samples = min(num_samples, len(val_dataset))
+        eval_dataset = val_dataset.select(range(eval_samples))
+        
+        print(f"Оцениваем модель на {eval_samples} примерах из валидационного датасета...")
 
         results = []
-        for case in test_cases:
+        correct_predictions = 0
+        total_predictions = 0
+
+        for i, example in enumerate(eval_dataset):
+            prompt = example["prompt"]
+            chosen_response = example["chosen"]
+            rejected_response = example["rejected"]
+
             comparison = self.model_manager.compare_responses(
-                case["prompt"],
-                case["good_response"],
-                case["bad_response"],
+                prompt,
+                chosen_response,
+                rejected_response,
                 self.config.max_length
             )
             results.append(comparison)
 
-            print(f"\nТестовый пример: {case['prompt']}")
-            print(f"Принятый ответ из dataset: {case['good_response']}")
-            print(f"Отвергнутый ответ из dataset: {case['bad_response']}")
-            print(f"Оценка хорошего ответа: {comparison['score_a']:.4f}")
-            print(f"Оценка плохого ответа: {comparison['score_b']:.4f}")
+            is_correct = comparison['preferred'] == 'A'
+            if is_correct:
+                correct_predictions += 1
+            total_predictions += 1
+
+            print(f"\nПример {i+1}/{eval_samples}:")
+            print(f"Промпт: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
+            print(f"Принятый ответ: {chosen_response[:100]}{'...' if len(chosen_response) > 100 else ''}")
+            print(f"Отвергнутый ответ: {rejected_response[:100]}{'...' if len(rejected_response) > 100 else ''}")
+            print(f"Оценка принятого ответа: {comparison['score_a']:.4f}")
+            print(f"Оценка отвергнутого ответа: {comparison['score_b']:.4f}")
             print(f"Разница: {comparison['difference']:.4f}")
-            print(f"Правильное предпочтение: {'Да' if comparison['preferred'] == 'A' else 'Нет'}")
+            print(f"Правильное предпочтение: {'Да' if is_correct else 'Нет'}")
+
+        accuracy = correct_predictions / total_predictions if total_predictions > 0 else 0
+        avg_score_difference = sum(r['difference'] for r in results) / len(results) if results else 0
+
+        evaluation_results = {
+            'accuracy': accuracy,
+            'correct_predictions': correct_predictions,
+            'total_predictions': total_predictions,
+            'average_score_difference': avg_score_difference,
+            'num_samples_evaluated': eval_samples,
+            'results': results
+        }
+
+        print(f"Точность: {accuracy:.2%} ({correct_predictions}/{total_predictions})")
+        print(f"Средняя разница в оценках: {avg_score_difference:.4f}")
+        print(f"Количество оцененных примеров: {eval_samples}")
+        
+        return evaluation_results

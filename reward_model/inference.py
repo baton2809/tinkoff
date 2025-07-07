@@ -111,7 +111,7 @@ class RewardModelInference:
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Reward model inference")
-    parser.add_argument("--model_path", default="models/trained_model",
+    parser.add_argument("--model_path", default="trained_model",
                         help="Path to trained model")
     parser.add_argument("--interactive", action="store_true",
                         help="Run interactive demo")
